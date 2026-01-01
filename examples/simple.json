@@ -1,0 +1,66 @@
+{
+  "filename": "simple_report.xlsx",
+  "properties": {
+    "title": "销售报表",
+    "author": "系统自动生成",
+    "company": "示例公司"
+  },
+  "styles": {
+    "header": {
+      "font": {
+        "bold": true,
+        "color": "#FFFFFF",
+        "size": 12
+      },
+      "fill": {
+        "color": "#4472C4"
+      },
+      "align": {
+        "h": "center",
+        "v": "vcenter"
+      },
+      "border": {
+        "around": 1
+      }
+    },
+    "number_style": {
+      "align": {
+        "h": "right"
+      }
+    },
+    "highlight": {
+      "font": {
+        "bold": true,
+        "color": "#FF0000"
+      }
+    }
+  },
+  "sheets": [
+    {
+      "name": "销售数据",
+      "cells": [
+        { "r": 0, "c": 0, "type": "string", "value": "产品名称", "style": "header" },
+        { "r": 0, "c": 1, "type": "string", "value": "销售额", "style": "header" },
+        { "r": 0, "c": 2, "type": "string", "value": "增长率", "style": "header" },
+        
+        { "r": 1, "c": 0, "type": "string", "value": "产品 A" },
+        { "r": 1, "c": 1, "type": "number", "value": 15000, "style": "number_style" },
+        { "r": 1, "c": 2, "type": "number", "value": 0.15 },
+        
+        { "r": 2, "c": 0, "type": "string", "value": "产品 B" },
+        { "r": 2, "c": 1, "type": "number", "value": 28000, "style": "number_style" },
+        { "r": 2, "c": 2, "type": "number", "value": 0.32 },
+        
+        { "r": 3, "c": 0, "type": "string", "value": "产品 C" },
+        { "r": 3, "c": 1, "type": "number", "value": 42000, "style": "number_style" },
+        { "r": 3, "c": 2, "type": "number", "value": 0.28 },
+        
+        { "r": 5, "c": 0, "type": "string", "value": "合计", "style": "highlight" },
+        { "r": 5, "c": 1, "type": "formula", "value": "=SUM(B2:B4)", "style": "highlight" }
+      ],
+      "merges": [
+        "A7:C7"
+      ]
+    }
+  ]
+}

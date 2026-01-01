@@ -1,0 +1,57 @@
+[package]
+name = "excel-server"
+version = "0.2.0"
+edition = "2021"
+build = "build.rs"
+
+[dependencies]
+# Web 框架
+axum = { version = "0.7", features = ["macros"] }
+tokio = { version = "1", features = ["full"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "trace", "fs"] }
+
+# 序列化
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Excel 生成
+rust_xlsxwriter = "0.77"
+
+# OpenAPI 文档
+utoipa = { version = "4", features = ["axum_extras"] }
+utoipa-swagger-ui = { version = "7", features = ["axum"] }
+
+# 日志和追踪
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# 监控
+metrics = "0.22"
+metrics-exporter-prometheus = { version = "0.15", default-features = false, features = ["http-listener"] }
+
+# 错误处理
+anyhow = "1"
+thiserror = "1"
+
+# UUID 生成
+uuid = { version = "1", features = ["v4", "serde"] }
+
+# 并发集合
+dashmap = "6.1"
+
+# URL 编码
+urlencoding = "2.1"
+
+# 时间处理
+chrono = { version = "0.4", features = ["serde"] }
+
+# 配置管理
+config = "0.14"
+
+# 静态文件嵌入
+rust-embed = "8.5"
+mime_guess = "2.0"
+
+[dev-dependencies]
+reqwest = { version = "0.11", features = ["json"] }

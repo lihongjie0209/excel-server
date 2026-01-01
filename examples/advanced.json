@@ -1,0 +1,71 @@
+{
+  "filename": "advanced_report.xlsx",
+  "properties": {
+    "title": "高级功能演示",
+    "author": "Excel Server"
+  },
+  "styles": {
+    "header": {
+      "font": { "bold": true, "color": "#FFFFFF" },
+      "fill": { "color": "#4472C4" },
+      "align": { "h": "center", "v": "vcenter" }
+    },
+    "red_highlight": {
+      "font": { "bold": true, "color": "#FF0000" }
+    }
+  },
+  "sheets": [
+    {
+      "name": "数据分析",
+      "cells": [
+        { "r": 0, "c": 0, "type": "string", "value": "月份", "style": "header" },
+        { "r": 0, "c": 1, "type": "string", "value": "收入", "style": "header" },
+        { "r": 0, "c": 2, "type": "string", "value": "支出", "style": "header" },
+        { "r": 0, "c": 3, "type": "string", "value": "利润", "style": "header" },
+        
+        { "r": 1, "c": 0, "type": "string", "value": "1月" },
+        { "r": 1, "c": 1, "type": "number", "value": 50000 },
+        { "r": 1, "c": 2, "type": "number", "value": 35000 },
+        { "r": 1, "c": 3, "type": "formula", "value": "=B2-C2" },
+        
+        { "r": 2, "c": 0, "type": "string", "value": "2月" },
+        { "r": 2, "c": 1, "type": "number", "value": 62000 },
+        { "r": 2, "c": 2, "type": "number", "value": 38000 },
+        { "r": 2, "c": 3, "type": "formula", "value": "=B3-C3" },
+        
+        { "r": 3, "c": 0, "type": "string", "value": "3月" },
+        { "r": 3, "c": 1, "type": "number", "value": 58000 },
+        { "r": 3, "c": 2, "type": "number", "value": 42000 },
+        { "r": 3, "c": 3, "type": "formula", "value": "=B4-C4" }
+      ],
+      "merges": [
+        {"r1": 6, "c1": 0, "r2": 6, "c2": 3}
+      ],
+      "tables": [
+        {
+          "range": "A1:D4",
+          "style": "TableStyleMedium9",
+          "columns": [
+            { "header": "月份" },
+            { "header": "收入" },
+            { "header": "支出" },
+            { "header": "利润" }
+          ]
+        }
+      ],
+      "conditional_formats": [
+        {
+          "range": "D2:D4",
+          "type": "cell",
+          "criteria": ">",
+          "value": 20000,
+          "style": "red_highlight"
+        },
+        {
+          "range": {"r1": 1, "c1": 1, "r2": 3, "c2": 1},
+          "type": "data_bar"
+        }
+      ]
+    }
+  ]
+}

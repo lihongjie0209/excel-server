@@ -1,0 +1,7 @@
+[server]
+host = "0.0.0.0"
+port = 13000
+
+[storage]
+temp_dir = "./temp"
+max_age_seconds = 3600

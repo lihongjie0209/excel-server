@@ -1,0 +1,15 @@
+/target
+/temp
+/temp_test*
+**/*.rs.bk
+*.pdb
+Cargo.lock
+
+# VitePress 构建产物
+documentation/node_modules
+documentation/.vitepress/cache
+documentation/.vitepress/dist
+
+# 测试生成的文件
+*.xlsx
+!examples/*.xlsx
