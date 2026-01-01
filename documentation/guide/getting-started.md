@@ -14,7 +14,7 @@
 
 ```bash
 # 克隆仓库
-git clone https://github.com/yourusername/excel-server.git
+git clone https://github.com/lihongjie0209/excel-server.git
 cd excel-server
 
 # 编译项目
@@ -240,5 +240,6 @@ lsof -i :3000
 如遇到问题：
 
 1. 查看 [常见问题](/guide/faq)
-2. 搜索 [GitHub Issues](https://github.com/yourusername/excel-server/issues)
+2. 搜索 [GitHub Issues](https://github.com/lihongjie0209/excel-server/issues)
 3. 提交新的 Issue
+

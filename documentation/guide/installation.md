@@ -11,7 +11,7 @@
 ### 1. 克隆仓库
 
 ```bash
-git clone https://github.com/yourusername/excel-server.git
+git clone https://github.com/lihongjie0209/excel-server.git
 cd excel-server
 ```
 
@@ -216,3 +216,4 @@ server {
 - [配置说明](/guide/configuration) - 详细配置选项
 - [快速开始](/guide/getting-started) - 开始使用
 - [使用示例](/guide/examples) - 实际案例
+

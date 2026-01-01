@@ -1,28 +1,48 @@
 # Excel Server
 
-基于 Axum + rust_xlsxwriter 的 Excel 生成服务，支持 DSL 规范。
+[![GitHub](https://img.shields.io/github/license/lihongjie0209/excel-server)](https://github.com/lihongjie0209/excel-server/blob/master/LICENSE)
+[![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg)](https://www.rust-lang.org)
+[![Axum](https://img.shields.io/badge/axum-0.7-blue.svg)](https://github.com/tokio-rs/axum)
 
-📚 **[完整文档](./documentation/)** | 🚀 **[快速开始](#快速开始)** | 📖 **[API 文档](http://localhost:3000/swagger-ui/)** | 🔄 **[更新日志](./CHANGELOG.md)**
+基于 Rust + Axum 的高性能 Excel 生成服务，支持 DSL 规范、文件持久化、内嵌 VitePress 文档。
+
+📚 **[完整文档](https://github.com/lihongjie0209/excel-server/tree/master/documentation)** | 🚀 **[快速开始](#快速开始)** | 📖 **[API 文档](http://localhost:13000/swagger-ui/)** | 🔄 **[更新日志](./CHANGELOG.md)**
 
 ## 功能特性
 
 - 📊 支持完整的 Excel DSL 规范 (v1.3)
 - 🚀 两种生成模式：直接返回二进制流 / 异步生成 + 下载
-- � **文件持久化**：使用文件系统存储，服务重启不丢失
-- ⚡ **高并发**：使用 DashMap 实现无锁并发访问
-- �📝 完整的 OpenAPI 3.0 文档
+- 💾 **文件持久化**：使用文件系统存储，服务重启不丢失
+- ⚡ **高并发**：使用 DashMap 实现无锁并发访问（300-500% 性能提升）
+- 📝 完整的 OpenAPI 3.0 文档
 - 📈 Prometheus 监控指标
 - 🔍 分布式追踪支持
+- 🌐 **内嵌文档**：VitePress 文档编译到二进制，单文件部署
 
 ## 快速开始
 
-### 运行服务
+### 克隆仓库
 
 ```bash
-cargo run
+git clone https://github.com/lihongjie0209/excel-server.git
+cd excel-server
 ```
 
-服务默认监听 `http://localhost:3000`
+### 构建并运行
+
+```bash
+# 构建文档（首次运行需要）
+cd documentation
+npm install
+npm run docs:build
+cd ..
+
+# 运行服务
+cargo run --releaseOpenAPI 文档
+- `GET /docs/` - VitePress 在线文档（内嵌）
+```
+
+服务默认监听 `http://localhost:13000`
 
 ### API 端点
 
@@ -39,8 +59,7 @@ cargo run
 
 ### 1. 直接生成 Excel
 
-```bash
-curl -X POST http://localhost:3000/api/excel/generate \
+```bash13000/api/excel/generate \
   -H "Content-Type: application/json" \
   -d @examples/simple.json \
   --output report.xlsx
@@ -50,14 +69,14 @@ curl -X POST http://localhost:3000/api/excel/generate \
 
 ```bash
 # 提交生成任务
-curl -X POST http://localhost:3000/api/excel/async \
+curl -X POST http://localhost:13000/api/excel/async \
   -H "Content-Type: application/json" \
   -d @examples/simple.json
 
 # 响应: {"code":0,"message":"success","data":{"file_id":"xxx"},"success":true}
 
 # 下载文件（POST 方法）
-curl -X POST http://localhost:3000/api/excel/download \
+curl -X POST http://localhost:13000/api/excel/download \
   -H "Content-Type: application/json" \
   -d '{"file_id":"xxx"}' \
   --output report.xlsx
@@ -67,21 +86,21 @@ curl -X POST http://localhost:3000/api/excel/download \
 
 ```bash
 # 提交生成任务
-curl -X POST http://localhost:3000/api/excel/async \
+curl -X POST http://localhost:13000/api/excel/async \
   -H "Content-Type: application/json" \
   -d @examples/simple.json
 
 # 响应: {"code":0,"message":"success","data":{"file_id":"xxx"},"success":true}
 
 # 下载文件（GET 方法，直接通过 URL）
-curl -o report.xlsx http://localhost:3000/api/excel/download/xxx
+curl -o report.xlsx http://localhost:13000/api/excel/download/xxx
 ```
 
 ### 4. 前端使用示例
 
 ```html
 <!-- HTML 直接下载 -->
-<a href="http://localhost:3000/api/excel/download/{file_id}" download>
+<a href="http://localhost:13000/api/excel/download/{file_id}" download>
   下载 Excel 文件
 </a>
 ```
@@ -89,9 +108,10 @@ curl -o report.xlsx http://localhost:3000/api/excel/download/xxx
 ```javascript
 // JavaScript 下载
 const fileId = 'xxx';
-window.location.href = `http://localhost:3000/api/excel/download/${fileId}`;
+window.location.href = `http://localhost:13000/api/excel/download/${fileId}`;
 
 // 或使用 fetch
+fetch(`http://localhost:1
 fetch(`http://localhost:3000/api/excel/download/${fileId}`)
   .then(res => res.blob())
   .then(blob => {
@@ -135,7 +155,7 @@ fetch(`http://localhost:3000/api/excel/download/${fileId}`)
 ```toml
 [server]
 host = "0.0.0.0"
-port = 3000
+port = 13000
 
 [storage]
 temp_dir = "./temp"          # 文件存储目录（持久化）
@@ -153,7 +173,7 @@ max_age_seconds = 3600       # 文件最大保留时间（秒）
 - **自动加载**: 服务启动时自动从文件系统恢复未过期文件
 - **过期清理**: 自动清理超过 `max_age_seconds` 的文件
 
-详细说明请参阅 [docs/PERSISTENCE.md](docs/PERSISTENCE.md)
+详细说明请参阅 [docs/PERSISTENCE.md](https://github.com/lihongjie0209/excel-server/blob/master/docs/PERSISTENCE.md)
 
 ## 开发
 
@@ -167,3 +187,11 @@ cargo test
 # 查看文档
 cargo doc --open
 ```
+
+## 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+## 许可证
+
+本项目采用 MIT 许可证。详见 [LICENSE](https://github.com/lihongjie0209/excel-server/blob/master/LICENSE) 文件。

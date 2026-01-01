@@ -367,5 +367,6 @@ open http://localhost:3000/swagger-ui/
 
 查看完整示例：
 
-- [简单示例](https://github.com/yourusername/excel-server/blob/main/examples/simple.json)
-- [高级示例](https://github.com/yourusername/excel-server/blob/main/examples/advanced.json)
+- [简单示例](https://github.com/lihongjie0209/excel-server/blob/main/examples/simple.json)
+- [高级示例](https://github.com/lihongjie0209/excel-server/blob/main/examples/advanced.json)
+

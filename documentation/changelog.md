@@ -161,7 +161,7 @@ cargo build --release
 
 ## 路线图
 
-查看 [GitHub Projects](https://github.com/yourusername/excel-server/projects) 了解未来计划。
+查看 [GitHub Projects](https://github.com/lihongjie0209/excel-server/projects) 了解未来计划。
 
 ### v0.3.0 (计划中)
 
@@ -186,6 +186,7 @@ cargo build --release
 
 欢迎贡献代码、报告问题或提出建议！
 
-- [GitHub Issues](https://github.com/yourusername/excel-server/issues)
-- [讨论区](https://github.com/yourusername/excel-server/discussions)
+- [GitHub Issues](https://github.com/lihongjie0209/excel-server/issues)
+- [讨论区](https://github.com/lihongjie0209/excel-server/discussions)
 - [贡献指南](/contributing)
+

@@ -17,7 +17,7 @@ hero:
       link: /api/overview
     - theme: alt
       text: 在 GitHub 上查看
-      link: https://github.com/yourusername/excel-server
+      link: https://github.com/lihongjie0209/excel-server
 
 features:
   - icon: 📊
@@ -54,7 +54,7 @@ features:
 ### 安装
 
 ```bash
-git clone https://github.com/yourusername/excel-server.git
+git clone https://github.com/lihongjie0209/excel-server.git
 cd excel-server
 cargo build --release
 ```
@@ -150,10 +150,11 @@ max_age_seconds = 3600       # 文件保留时间（秒）
 
 ## 社区
 
-- [GitHub Issues](https://github.com/yourusername/excel-server/issues)
-- [讨论区](https://github.com/yourusername/excel-server/discussions)
+- [GitHub Issues](https://github.com/lihongjie0209/excel-server/issues)
+- [讨论区](https://github.com/lihongjie0209/excel-server/discussions)
 - [更新日志](/changelog)
 
 ## 许可证
 
 [MIT License](https://opensource.org/licenses/MIT)
+
