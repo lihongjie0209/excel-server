@@ -11,6 +11,26 @@ use rust_embed::RustEmbed;
 #[folder = "documentation/.vitepress/dist"]
 pub struct DocsAssets;
 
+/// 嵌入的静态资源文件（demo页面等）
+#[derive(RustEmbed)]
+#[folder = "static"]
+pub struct StaticAssets;
+
+/// 服务 Demo 页面
+pub async fn serve_demo() -> impl IntoResponse {
+    match StaticAssets::get("demo.html") {
+        Some(content) => Response::builder()
+            .status(StatusCode::OK)
+            .header(header::CONTENT_TYPE, "text/html; charset=utf-8")
+            .body(Body::from(content.data.to_vec()))
+            .unwrap(),
+        None => Response::builder()
+            .status(StatusCode::NOT_FOUND)
+            .body(Body::from("Demo page not found"))
+            .unwrap(),
+    }
+}
+
 /// 服务文档静态文件
 pub async fn serve_docs(Path(path): Path<String>) -> impl IntoResponse {
     serve_file(&path).await

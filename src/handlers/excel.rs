@@ -88,11 +88,15 @@ pub async fn generate_excel_async(
     let filename = dsl.filename.clone();
     
     // 生成 Excel
+    info!("[生成] 开始生成 Excel - filename: {}", filename);
     let mut generator = ExcelGenerator::new();
     let data = generator.generate(&dsl)?;
+    info!("[生成] Excel 生成完成 - filename: {}, size: {} bytes", filename, data.len());
     
     // 存储文件
-    let file_id = state.storage.store(filename, data).await?;
+    info!("[生成] 调用存储服务 - filename: {}", filename);
+    let file_id = state.storage.store(filename.clone(), data).await?;
+    info!("[生成] 文件存储成功 - file_id: {}, filename: {}", file_id, filename);
     
     counter!("api.excel.async.success").increment(1);
     
@@ -177,11 +181,13 @@ pub async fn download_excel_get(
     State(state): State<AppState>,
     axum::extract::Path(file_id): axum::extract::Path<String>,
 ) -> Result<Response, AppError> {
-    info!("下载 Excel 文件 (GET): {}", file_id);
+    info!("[下载-GET] 收到下载请求 - file_id: {}", file_id);
     counter!("api.excel.download_get.total").increment(1);
     
     // 获取文件
+    info!("[下载-GET] 调用存储服务检索文件 - file_id: {}", file_id);
     let (filename, data) = state.storage.retrieve(&file_id).await?;
+    info!("[下载-GET] 文件检索成功 - file_id: {}, filename: {}, size: {} bytes", file_id, filename, data.len());
     
     counter!("api.excel.download_get.success").increment(1);
     
@@ -192,6 +198,8 @@ pub async fn download_excel_get(
         if filename.chars().all(|c| c.is_ascii()) { &filename } else { "download.xlsx" },
         encoded_filename
     );
+    
+    info!("[下载-GET] 返回文件流 - file_id: {}, filename: {}", file_id, filename);
     
     // 返回二进制流
     let response = Response::builder()

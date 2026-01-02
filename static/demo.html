@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Server - 性能测试工具</title>
+    <!-- Pako - Gzip 压缩库 -->
+    <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .form-group input[type="number"],
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input[type="number"]:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .columns-config {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .columns-config h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .column-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .column-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .column-header strong {
+            color: #667eea;
+        }
+        
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .result-panel {
+            background: #f0f7ff;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .result-panel.show {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #d0e7ff;
+        }
+        
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        
+        .result-label {
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .result-value {
+            color: #667eea;
+            font-weight: 700;
+            font-size: 18px;
+        }
+        
+        .error {
+            background: #fee;
+            border: 2px solid #f66;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .error.show {
+            display: block;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        
+        .info-box p {
+            margin: 5px 0;
+            color: #555;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Excel Server 性能测试</h1>
+            <p>测试大规模 Excel 文件生成性能</p>
+        </div>
+        
+        <div class="content">
+            <div class="info-box">
+                <p>💡 <strong>使用提示：</strong></p>
+                <p>• 设置行列数量和列类型</p>
+                <p>• 点击"生成 Excel"开始测试</p>
+                <p>• 系统将统计生成时间和文件大小</p>
+                <p>• 🗜️ <strong>已启用 Gzip 压缩</strong>：JSON 数据将自动压缩 70-90%</p>
+            </div>
+            
+            <form id="excelForm">
+                <div class="row">
+                    <div class="form-group">
+                        <label for="rows">行数 *</label>
+                        <input type="number" id="rows" name="rows" min="1" max="1000000" value="1000" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="columns">列数 *</label>
+                        <input type="number" id="columns" name="columns" min="1" max="100" value="10" required>
+                    </div>
+                </div>
+                
+                <div class="columns-config" id="columnsConfig">
+                    <h3>列配置</h3>
+                    <div id="columnsList"></div>
+                </div>
+                
+                <button type="button" class="btn btn-secondary" onclick="regenerateColumns()">
+                    🔄 重新生成列配置
+                </button>
+                
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    🚀 生成 Excel
+                </button>
+            </form>
+            
+            <div class="result-panel" id="resultPanel">
+                <h3 style="margin-bottom: 15px; color: #333;">📈 测试结果</h3>
+                <div class="result-item">
+                    <span class="result-label">生成时间</span>
+                    <span class="result-value" id="generationTime">-</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">下载时间</span>
+                    <span class="result-value" id="downloadTime">-</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">总耗时</span>
+                    <span class="result-value" id="totalTime">-</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">文件大小</span>
+                    <span class="result-value" id="fileSize">-</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">数据规模</span>
+                    <span class="result-value" id="dataSize">-</span>
+                </div>
+            </div>
+            
+            <div class="error" id="errorPanel"></div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = window.location.origin;
+        
+        const COLUMN_TYPES = [
+            { value: 'string', label: '字符串', icon: '📝' },
+            { value: 'number', label: '数字', icon: '🔢' },
+            { value: 'date', label: '日期', icon: '📅' },
+            { value: 'boolean', label: '布尔值', icon: '✓' },
+            { value: 'formula', label: '公式', icon: '∑' }
+        ];
+        
+        function generateColumns() {
+            const count = parseInt(document.getElementById('columns').value) || 10;
+            const container = document.getElementById('columnsList');
+            container.innerHTML = '';
+            
+            for (let i = 0; i < count; i++) {
+                const colDiv = document.createElement('div');
+                colDiv.className = 'column-item';
+                colDiv.innerHTML = `
+                    <div class="column-header">
+                        <strong>列 ${i + 1}</strong>
+                    </div>
+                    <div class="row">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>类型</label>
+                            <select name="col_type_${i}" class="col-type">
+                                ${COLUMN_TYPES.map(t => 
+                                    `<option value="${t.value}">${t.icon} ${t.label}</option>`
+                                ).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>数据长度（字符串）</label>
+                            <input type="number" name="col_length_${i}" value="10" min="1" max="1000">
+                        </div>
+                    </div>
+                `;
+                container.appendChild(colDiv);
+            }
+        }
+        
+        function regenerateColumns() {
+            generateColumns();
+        }
+        
+        document.getElementById('columns').addEventListener('change', generateColumns);
+        
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+        
+        function formatTime(ms) {
+            if (ms < 1000) return ms + ' ms';
+            return (ms / 1000).toFixed(2) + ' s';
+        }
+        
+        function showError(message) {
+            const errorPanel = document.getElementById('errorPanel');
+            errorPanel.textContent = message;
+            errorPanel.classList.add('show');
+            setTimeout(() => errorPanel.classList.remove('show'), 5000);
+        }
+        
+        function generateDSL(rows, columnConfigs) {
+            const cells = [];
+            
+            // 生成表头
+            columnConfigs.forEach((col, colIdx) => {
+                cells.push({
+                    r: 0,
+                    c: colIdx,
+                    type: 'string',
+                    value: `${col.type}_${colIdx + 1}`,
+                    style: 'header'
+                });
+            });
+            
+            // 生成数据行
+            for (let row = 1; row <= rows; row++) {
+                columnConfigs.forEach((col, colIdx) => {
+                    let cell = {
+                        r: row,
+                        c: colIdx
+                    };
+                    
+                    switch (col.type) {
+                        case 'string':
+                            cell.type = 'string';
+                            cell.value = 'A'.repeat(col.length);
+                            break;
+                        case 'number':
+                            cell.type = 'number';
+                            cell.value = Math.random() * 10000;
+                            break;
+                        case 'date':
+                            cell.type = 'date';
+                            cell.value = new Date().toISOString();
+                            break;
+                        case 'boolean':
+                            cell.type = 'boolean';
+                            cell.value = Math.random() > 0.5;
+                            break;
+                        case 'formula':
+                            cell.type = 'formula';
+                            cell.value = '=ROW()*COLUMN()';
+                            break;
+                    }
+                    
+                    cells.push(cell);
+                });
+            }
+            
+            return {
+                filename: `test_${rows}x${columnConfigs.length}.xlsx`,
+                styles: {
+                    header: {
+                        font: { bold: true, color: '#FFFFFF' },
+                        fill: { color: '#4472C4' },
+                        align: { h: 'center', v: 'vcenter' }
+                    }
+                },
+                sheets: [{
+                    name: 'TestData',
+                    cells: cells
+                }]
+            };
+        }
+        
+        document.getElementById('excelForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const resultPanel = document.getElementById('resultPanel');
+            resultPanel.classList.remove('show');
+            
+            // 收集表单数据
+            const rows = parseInt(document.getElementById('rows').value);
+            const columns = parseInt(document.getElementById('columns').value);
+            
+            const columnConfigs = [];
+            for (let i = 0; i < columns; i++) {
+                columnConfigs.push({
+                    type: document.querySelector(`select[name="col_type_${i}"]`).value,
+                    length: parseInt(document.querySelector(`input[name="col_length_${i}"]`).value) || 10
+                });
+            }
+            
+            // 生成 DSL
+            const dsl = generateDSL(rows, columnConfigs);
+            const jsonStr = JSON.stringify(dsl);
+            const originalSize = new Blob([jsonStr]).size;
+            
+            console.log(`📦 原始 JSON 大小: ${formatBytes(originalSize)}`);
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '⏳ 生成中... <span class="spinner"></span>';
+            
+            try {
+                // 使用 pako 压缩（如果可用）
+                let body, headers;
+                if (typeof pako !== 'undefined') {
+                    // 压缩 JSON
+                    const compressed = pako.gzip(jsonStr);
+                    const compressedSize = compressed.byteLength;
+                    const ratio = ((1 - compressedSize / originalSize) * 100).toFixed(1);
+                    console.log(`🗜️  Gzip 压缩后: ${formatBytes(compressedSize)} (压缩率: ${ratio}%)`);
+                    
+                    body = compressed;
+                    headers = {
+                        'Content-Type': 'application/json',
+                        'Content-Encoding': 'gzip'
+                    };
+                } else {
+                    console.warn('⚠️  pako 未加载，使用未压缩数据');
+                    body = jsonStr;
+                    headers = { 'Content-Type': 'application/json' };
+                }
+                
+                // 异步生成
+                const startTime = Date.now();
+                const asyncResponse = await fetch(`${API_BASE}/api/excel/async`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: body
+                });
+                
+                if (!asyncResponse.ok) {
+                    throw new Error('生成失败: ' + asyncResponse.statusText);
+                }
+                
+                const asyncResult = await asyncResponse.json();
+                const generationTime = Date.now() - startTime;
+                
+                if (!asyncResult.success) {
+                    throw new Error(asyncResult.message);
+                }
+                
+                const fileId = asyncResult.data.file_id;
+                
+                // 下载文件（带重试机制）
+                const downloadStartTime = Date.now();
+                let downloadResponse;
+                let retryCount = 0;
+                const maxRetries = 3;
+                
+                while (retryCount <= maxRetries) {
+                    try {
+                        downloadResponse = await fetch(`${API_BASE}/api/excel/download/${fileId}`);
+                        
+                        if (!downloadResponse.ok) {
+                            if (retryCount < maxRetries) {
+                                console.log(`下载失败，${100 * (retryCount + 1)}ms 后重试 (${retryCount + 1}/${maxRetries})...`);
+                                await new Promise(resolve => setTimeout(resolve, 100 * (retryCount + 1)));
+                                retryCount++;
+                                continue;
+                            }
+                            throw new Error('下载失败: ' + downloadResponse.statusText);
+                        }
+                        
+                        // 检查返回类型
+                        const contentType = downloadResponse.headers.get('content-type');
+                        if (contentType && contentType.includes('application/json')) {
+                            // 如果返回的是 JSON，说明有错误
+                            const errorResult = await downloadResponse.json();
+                            if (!errorResult.success) {
+                                if (retryCount < maxRetries) {
+                                    console.log(`文件未就绪: ${errorResult.message}，${100 * (retryCount + 1)}ms 后重试 (${retryCount + 1}/${maxRetries})...`);
+                                    await new Promise(resolve => setTimeout(resolve, 100 * (retryCount + 1)));
+                                    retryCount++;
+                                    continue;
+                                }
+                                throw new Error(errorResult.message);
+                            }
+                        }
+                        
+                        break; // 成功，退出重试循环
+                    } catch (error) {
+                        if (retryCount >= maxRetries) {
+                            throw error;
+                        }
+                        console.log(`请求异常: ${error.message}，${100 * (retryCount + 1)}ms 后重试 (${retryCount + 1}/${maxRetries})...`);
+                        await new Promise(resolve => setTimeout(resolve, 100 * (retryCount + 1)));
+                        retryCount++;
+                    }
+                }
+                
+                const blob = await downloadResponse.blob();
+                const downloadTime = Date.now() - downloadStartTime;
+                const totalTime = Date.now() - startTime;
+                
+                // 触发下载
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = dsl.filename;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                // 显示结果
+                document.getElementById('generationTime').textContent = formatTime(generationTime);
+                document.getElementById('downloadTime').textContent = formatTime(downloadTime);
+                document.getElementById('totalTime').textContent = formatTime(totalTime);
+                document.getElementById('fileSize').textContent = formatBytes(blob.size);
+                document.getElementById('dataSize').textContent = `${rows} 行 × ${columns} 列 = ${rows * columns} 单元格`;
+                
+                resultPanel.classList.add('show');
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showError('生成失败: ' + error.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '🚀 生成 Excel';
+            }
+        });
+        
+        // 初始化
+        generateColumns();
+    </script>
+</body>
+</html>

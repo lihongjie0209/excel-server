@@ -85,10 +85,15 @@ pub fn create_router(state: AppState) -> Router {
         .route("/docs/", get(docs::serve_docs_root))
         .route("/docs/*path", get(docs::serve_docs));
     
+    // Demo 页面路由
+    let demo_routes = Router::new()
+        .route("/demo", get(docs::serve_demo));
+    
     // 组合所有路由
     Router::new()
         .nest("/api", api_routes)
         .merge(system_routes)
         .merge(swagger)
         .merge(docs_routes)
+        .merge(demo_routes)
 }

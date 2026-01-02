@@ -5,10 +5,13 @@ mod models;
 mod routes;
 mod services;
 
+use axum::extract::DefaultBodyLimit;
 use axum::http::{header, Method};
 use metrics_exporter_prometheus::{Matcher, PrometheusBuilder, PrometheusHandle};
 use tower::ServiceBuilder;
+use tower_http::compression::CompressionLayer;
 use tower_http::cors::{Any, CorsLayer};
+use tower_http::decompression::RequestDecompressionLayer;
 use tower_http::trace::TraceLayer;
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -60,11 +63,14 @@ async fn main() {
         .layer(
             ServiceBuilder::new()
                 .layer(TraceLayer::new_for_http())
+                .layer(RequestDecompressionLayer::new()) // 解压缩请求体
+                .layer(CompressionLayer::new()) // 压缩响应体
+                .layer(DefaultBodyLimit::max(500 * 1024 * 1024)) // 500MB 限制
                 .layer(
                     CorsLayer::new()
                         .allow_origin(Any)
                         .allow_methods([Method::GET, Method::POST])
-                        .allow_headers([header::CONTENT_TYPE]),
+                        .allow_headers([header::CONTENT_TYPE, header::CONTENT_ENCODING, header::ACCEPT_ENCODING]),
                 ),
         );
     
@@ -78,6 +84,7 @@ async fn main() {
     info!("📍 监听地址: {}", addr);
     info!("📚 API 文档: http://{}/swagger-ui/", addr);
     info!("📖 在线文档: http://{}/docs/", addr);
+    info!("🎮 性能测试: http://{}/demo", addr);
     info!("💊 健康检查: http://{}/health", addr);
     info!("📊 监控指标: http://{}/metrics", addr);
     

@@ -1,5 +1,6 @@
 use std::fs;
 use std::path::PathBuf;
+use std::sync::Arc;
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -9,7 +10,7 @@ use crate::errors::AppError;
 #[derive(Clone)]
 pub struct FileStorage {
     temp_dir: PathBuf,
-    files: DashMap<String, StoredFile>,
+    files: Arc<DashMap<String, StoredFile>>,
     max_age_seconds: u64,
 }
 
@@ -36,7 +37,7 @@ impl FileStorage {
         
         let storage = Self {
             temp_dir: temp_dir.clone(),
-            files: DashMap::new(),
+            files: Arc::new(DashMap::new()),
             max_age_seconds,
         };
         
@@ -49,43 +50,59 @@ impl FileStorage {
     /// 存储文件并返回文件 ID
     pub async fn store(&self, filename: String, data: Vec<u8>) -> Result<String, AppError> {
         let file_id = Uuid::new_v4().to_string();
-        
-        // 写入文件到磁盘
-        let file_path = self.get_file_path(&file_id);
-        tokio::fs::write(&file_path, &data).await?;
+        tracing::info!("[存储] 开始存储文件 - file_id: {}, filename: {}, size: {} bytes", file_id, filename, data.len());
         
         let stored = StoredFile {
             file_id: file_id.clone(),
             filename: filename.clone(),
-            data,
+            data: data.clone(),
             created_at: std::time::Instant::now(),
         };
         
-        // 存储到内存
+        // 先存储到内存（立即可用）
         self.files.insert(file_id.clone(), stored);
+        tracing::debug!("[存储] 已插入内存 - file_id: {}, 当前内存文件数: {}", file_id, self.files.len());
+        
+        // 异步写入文件到磁盘（不阻塞）
+        let file_path = self.get_file_path(&file_id);
+        tracing::debug!("[存储] 开始写入磁盘 - file_id: {}, path: {:?}", file_id, file_path);
+        tokio::fs::write(&file_path, &data).await?;
+        tracing::debug!("[存储] 磁盘写入完成 - file_id: {}", file_id);
         
         // 持久化元数据
         self.save_metadata(&file_id, &filename)?;
+        tracing::debug!("[存储] 元数据写入完成 - file_id: {}", file_id);
         
         // 清理过期文件
         self.cleanup_expired();
         
+        tracing::info!("[存储] 文件存储完成 - file_id: {}", file_id);
         Ok(file_id)
     }
     
     /// 根据文件 ID 获取文件
     pub async fn retrieve(&self, file_id: &str) -> Result<(String, Vec<u8>), AppError> {
+        tracing::debug!("[检索] 尝试获取文件 - file_id: {}, 当前内存文件数: {}", file_id, self.files.len());
+        
         if let Some(file) = self.files.get(file_id) {
+            tracing::debug!("[检索] 找到文件 - file_id: {}, filename: {}, size: {} bytes, age: {}s", 
+                file_id, file.filename, file.data.len(), file.created_at.elapsed().as_secs());
+            
             // 检查文件是否过期
             if file.created_at.elapsed().as_secs() > self.max_age_seconds {
+                tracing::warn!("[检索] 文件已过期 - file_id: {}, age: {}s, max_age: {}s", 
+                    file_id, file.created_at.elapsed().as_secs(), self.max_age_seconds);
                 // 删除过期文件
                 drop(file);
                 self.delete(file_id).await?;
                 return Err(AppError::NotFound(format!("文件已过期: {}", file_id)));
             }
             
+            tracing::info!("[检索] 成功获取文件 - file_id: {}, filename: {}", file_id, file.filename);
             Ok((file.filename.clone(), file.data.clone()))
         } else {
+            tracing::error!("[检索] 文件不存在 - file_id: {}, 当前内存中的所有文件 ID: {:?}", 
+                file_id, self.files.iter().map(|e| e.key().clone()).collect::<Vec<_>>());
             Err(AppError::NotFound(format!("文件不存在: {}", file_id)))
         }
     }
@@ -108,19 +125,34 @@ impl FileStorage {
     
     /// 清理过期文件
     fn cleanup_expired(&self) {
+        tracing::debug!("[清理] 开始清理过期文件，当前文件数: {}, max_age: {}s", self.files.len(), self.max_age_seconds);
+        
         let expired_ids: Vec<String> = self.files
             .iter()
-            .filter(|entry| entry.value().created_at.elapsed().as_secs() > self.max_age_seconds)
+            .filter(|entry| {
+                let age = entry.value().created_at.elapsed().as_secs();
+                let is_expired = age > self.max_age_seconds;
+                if is_expired {
+                    tracing::info!("[清理] 发现过期文件 - file_id: {}, age: {}s, max_age: {}s", 
+                        entry.key(), age, self.max_age_seconds);
+                }
+                is_expired
+            })
             .map(|entry| entry.key().clone())
             .collect();
         
+        tracing::debug!("[清理] 找到 {} 个过期文件", expired_ids.len());
+        
         for file_id in expired_ids {
+            tracing::info!("[清理] 删除过期文件 - file_id: {}", file_id);
             let _ = tokio::task::block_in_place(|| {
                 tokio::runtime::Handle::current().block_on(async {
                     self.delete(&file_id).await
                 })
             });
         }
+        
+        tracing::debug!("[清理] 清理完成，剩余文件数: {}", self.files.len());
     }
     
     /// 获取存储的文件数量
