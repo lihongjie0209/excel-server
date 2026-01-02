@@ -55,3 +55,16 @@ mime_guess = "2.0"
 
 [dev-dependencies]
 reqwest = { version = "0.11", features = ["json"] }
+
+# 生产环境优化配置
+[profile.release]
+opt-level = 3              # 最高优化级别
+lto = "fat"                # 启用 Fat LTO，最大程度优化
+codegen-units = 1          # 单个代码生成单元，提升优化效果
+strip = true               # 移除调试符号，减小二进制体积
+panic = "abort"            # Panic 时直接中止，减小二进制体积
+overflow-checks = false    # 禁用溢出检查，提升性能
+
+# 依赖优化配置
+[profile.release.package."*"]
+opt-level = 3              # 优化所有依赖
